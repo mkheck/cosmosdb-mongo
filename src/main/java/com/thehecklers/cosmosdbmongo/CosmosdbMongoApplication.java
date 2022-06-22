@@ -1,5 +1,6 @@
 package com.thehecklers.cosmosdbmongo;
 
+import lombok.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.annotation.Id;
@@ -15,46 +16,55 @@ import javax.annotation.PostConstruct;
 @SpringBootApplication
 public class CosmosdbMongoApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(CosmosdbMongoApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(CosmosdbMongoApplication.class, args);
+    }
 
 }
 
 @Component
 class DataLoader {
-	private final UserRepository repo;
+    private final UserRepository repo;
 
-	DataLoader(UserRepository repo) {
-		this.repo = repo;
-	}
+    DataLoader(UserRepository repo) {
+        this.repo = repo;
+    }
 
-	@PostConstruct
-	void loadData() {
-		repo.deleteAll()
-				.thenMany(Flux.just(new User("1", "Alpha", "Bravo", "123 N 4th St"),
-						new User("2", "Charlie", "Delta", "1313 Mockingbird Ln")))
-				.flatMap(repo::save)
-				.thenMany(repo.findAll())
-				.subscribe(System.out::println);
-	}
+    @PostConstruct
+    void loadData() {
+        repo.deleteAll()
+                .thenMany(Flux.just(new User("Alpha", "Bravo", "123 N 45th St"),
+                        new User("Charlie", "Delta", "1313 Mockingbird Lane")))
+                .flatMap(repo::save)
+                .thenMany(repo.findAll())
+                .subscribe(System.out::println);
+    }
 }
 
 @RestController
 class CosmosMongoController {
-	private final UserRepository repo;
+    private final UserRepository repo;
 
-	CosmosMongoController(UserRepository repo) {
-		this.repo = repo;
-	}
+    CosmosMongoController(UserRepository repo) {
+        this.repo = repo;
+    }
 
-	@GetMapping
-	Flux<User> getAllUsers() {
-		return repo.findAll();
-	}
+    @GetMapping
+    Flux<User> getAllUsers() {
+        return repo.findAll();
+    }
 }
 
-interface UserRepository extends ReactiveCrudRepository<User, String> {}
+interface UserRepository extends ReactiveCrudRepository<User, String> {
+}
 
 @Document
-record User(@Id String id, String firstName, String lastName, String address) {}
+@Data
+@NoArgsConstructor
+@RequiredArgsConstructor
+class User {
+    @Id
+    private String id;
+    @NonNull
+    private String firstName, lastName, address;
+}
